@@ -10,15 +10,43 @@
 
 ## Запуск
 
-Понадобятся Docker Compose на сервере и `uv` на компьютере с браузером для первого входа в Google.
+Понадобятся Docker с Compose на сервере и `uv` на компьютере с браузером для первого входа в Google. Скачайте проект на компьютер. Выполняйте команды из корня проекта.
 
-1. Скопируйте `.env.example` в `.env`. Укажите рабочий email в `YANDEX_USERNAME`, [пароль приложения Яндекса](https://id.yandex.ru/security/app-passwords) типа «Календарь» в `YANDEX_PASSWORD` и точное название календаря в `YANDEX_CALENDAR_NAME`.
-2. В [Google Cloud Console](https://console.cloud.google.com/) включите Google Calendar API и создайте OAuth-клиент типа **Desktop app**. Если приложение находится в режиме Testing, добавьте свой Google-аккаунт в список тестовых пользователей. Сохраните JSON клиента как `credentials/google_credentials.json`.
-3. В папке проекта на компьютере выполните `uv run --locked python scripts/setup_google_oauth.py`. После входа рядом с JSON клиента появится `credentials/token.json`.
-4. На сервере разместите файлы проекта, `.env` и папку `credentials/`. Создайте папку `data/`. Процесс в контейнере работает с UID 1000, ему нужна запись в `data/` и возможность обновлять `credentials/token.json`.
-5. Выполните `docker compose up -d --build`. Посмотреть результат первого цикла можно через `docker compose logs -f calendar-sync`.
+### На компьютере
 
-`GOOGLE_CALENDAR_NAME` задаёт имя календаря-копии. Сервис найдёт календарь с этим именем или создаст его. Для первого запуска используйте отдельное имя. SQLite-база в `data/` хранит привязки записей к Google ID и нужна при переносе установки на другой сервер.
+1. Подготовьте конфигурацию для первого запуска.
+
+   ```sh
+   mkdir -p credentials
+   cp .env.example .env
+   ```
+
+2. В `.env` укажите email Яндекса в `YANDEX_USERNAME`, пароль приложения типа «Календарь» в `YANDEX_PASSWORD` и точное название исходного календаря в `YANDEX_CALENDAR_NAME`. [Создать пароль приложения Яндекса](https://id.yandex.ru/security/app-passwords)
+3. Выберите отдельное имя для Google-копии в `GOOGLE_CALENDAR_NAME`. По умолчанию это `Yandex Calendar`. Сервис использует существующий календарь с таким именем или создаст новый.
+4. Включите Google Calendar API в своём проекте Google Cloud и создайте OAuth-клиент типа **Desktop app**. Если приложение в режиме Testing, добавьте свой Google-аккаунт в список тестовых пользователей. Скачайте JSON клиента в `credentials/google_credentials.json`. [Google Cloud Console](https://console.cloud.google.com/)
+5. Запустите команду ниже и войдите в Google-аккаунт, в котором хотите видеть встречи. Скрипт сохранит токен в `credentials/token.json`.
+
+   ```sh
+   uv run --locked python scripts/setup_google_oauth.py
+   ```
+
+### На сервере
+
+Разместите проект на сервере. Перенесите туда `.env` и папку `credentials/` по защищённому каналу, например через SSH. Для обычной установки Docker на Linux подготовьте каталоги из корня проекта. Контейнер работает с UID 1000 и записывает базу в `data/`, а обновлённый токен в `credentials/token.json`.
+
+```sh
+mkdir -p data
+sudo chown -R 1000 data credentials
+sudo chmod 700 data credentials
+sudo chmod 600 credentials/google_credentials.json credentials/token.json
+chmod 600 .env
+docker compose up -d --build
+docker compose logs -f calendar-sync
+```
+
+Дождитесь записи `sync.completed` с нулём в поле `errors`. Для проверки создайте в Яндексе встречу без гостей на завтра. Когда она появится в Google-копии, перенесите её в Яндексе на другое время. После синхронизации в Google должна остаться одна встреча с новым временем.
+
+SQLite-база в `data/` хранит привязки записей к Google ID и нужна при переносе установки на другой сервер.
 
 ## Где хранятся учётные данные
 

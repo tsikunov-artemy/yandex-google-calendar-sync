@@ -1,0 +1,16 @@
+---
+name: document-tested-changes
+description: Closes a feature or bug fix in this calendar-sync repository by verifying its behavior, filling test gaps, and updating ARCHITECTURE.md with source and test links. Applies when implementing functionality, fixing regressions, or finishing requests such as «добавь поддержку», «исправь перенос встречи», «проверь покрытие и обнови документацию».
+---
+
+# Document a tested change
+
+Use the repository's root `ARCHITECTURE.md` as the maintained English account of current behavior. The deliverable is the updated walkthrough alongside the implementation and its checks.
+
+1. **Trace the actual change.** Inspect the task's diff, including new files. For an already committed change, read its commit. In an exported tree without Git history, trace the requested behavior in the current code and tests. Follow the caller through the changed branch to its observable result. For calendar sync this may be a Google ID that survives a move, a field sent to CalDAV, or a mapping that survives a timeout. Identify the relevant mode when behavior differs by direction.
+2. **Match each behavior to evidence.** Open the test and read its assertions. An existing test suffices if it exercises the changed path and would catch the regression. Otherwise add or extend a focused test in `tests/`. For a fix, use the previously failing input and assert the corrected outcome. Use a relevant failure or retry case when it affects the behavior being documented.
+3. **Run the checks.** Run the relevant test, then the repository suite with `uv run --locked pytest -q` or its equivalent in the project's installed environment. For behavior a unit test cannot observe, identify the integration check and its scope. If it cannot run, record the exact gap. A mocked API response proves only the local handling of that response.
+4. **Update the affected section of `ARCHITECTURE.md`.** In English, state the trigger, decision and effect. Link the implementing function or branch and the test with the decisive assertion using repository-relative GitHub links in the form `path/to/file.py#L<number>`. Derive the line from the final source. Alongside the behavior, state what the test asserts, what it substitutes, and which integration outcome still needs a check. For a manual-only check, record the procedure, expected result, and observed result or “not run” with the reason. Include the reproducible command for a new kind of check. Reuse the walkthrough's existing test command when it already applies. Replace obsolete behavior in place. Update `README.md` too if usage or setup changed.
+5. **Check the final paths.** Search the Markdown for references to files touched by the change, including links outside the paragraph you edited. Open each affected `#L` anchor against the final file and confirm the target still implements or asserts the stated behavior. In the handoff give the Markdown link, checks actually run, their outcome and any remaining gap. Keep transient run counts and logs in the handoff.
+
+For example, if retry handling changes after a failed Google write, trace where the occurrence is marked as processed. The regression test should fail the first write and inspect the next attempt. In the walkthrough, link that decision and the retry assertion, and state whether the test used a fake Google provider.

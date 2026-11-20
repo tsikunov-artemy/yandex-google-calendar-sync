@@ -1,0 +1,41 @@
+[project]
+name = "calendar-sync"
+version = "0.1.0"
+description = "Bidirectional sync between Yandex Calendar (CalDAV) and Google Calendar (API)"
+requires-python = ">=3.11"
+dependencies = [
+    # CalDAV (Yandex Calendar)
+    "caldav>=1.4,<3.0",
+    "icalendar>=6.0,<7.0",
+
+    # Google Calendar
+    "google-api-python-client>=2.150",
+    "google-auth-httplib2>=0.2",
+    "google-auth-oauthlib>=1.2",
+
+    # Configuration & Data
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "python-dateutil>=2.9",
+
+    # Utilities
+    "tenacity>=9.0",
+    "structlog>=24.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

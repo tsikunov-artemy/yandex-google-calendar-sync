@@ -1,0 +1,14 @@
+services:
+  calendar-sync:
+    build: .
+    container_name: calendar-sync
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./credentials:/app/credentials
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
